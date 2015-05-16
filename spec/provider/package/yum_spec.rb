@@ -12,6 +12,12 @@ describe Wright::Provider::Package::Yum do
     Wright::Provider::Package::Yum.new(pkg_resource)
   end
 
+  def yum(action, pkg_name, pkg_version = nil)
+    options = action == :install ? ['-y'] : []
+    version = pkg_version.nil? ? '' : "-#{pkg_version}"
+    ['yum', action.to_s, *options, pkg_name + version]
+  end
+
   before :each do
     yum_dir = File.join(File.dirname(__FILE__), 'yum')
     @fake_capture3 = FakeCapture3.new(yum_dir)
@@ -39,6 +45,31 @@ describe Wright::Provider::Package::Yum do
       @fake_capture3.expect(rpm_q_cmd, 'rpm_-q_httpd')
       @fake_capture3.stub do
         pkg_provider.installed_versions.must_equal pkg_versions
+      end
+    end
+  end
+
+  describe '#install_package' do
+    it 'should install packages' do
+      pkg_name = 'nano'
+      pkg_provider = package_provider(pkg_name)
+      yum_install_cmd = yum(:install, pkg_name)
+
+      @fake_capture3.expect(yum_install_cmd)
+      @fake_capture3.stub do
+        pkg_provider.send(:install_package)
+      end
+    end
+
+    it 'should install packages with version' do
+      pkg_name = 'mc'
+      pkg_version = '4.8.7-8.el7'
+      pkg_provider = package_provider(pkg_name, pkg_version)
+      yum_install_cmd = yum(:install, pkg_name, pkg_version)
+
+      @fake_capture3.expect(yum_install_cmd)
+      @fake_capture3.stub do
+        pkg_provider.send(:install_package)
       end
     end
   end

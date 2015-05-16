@@ -20,6 +20,21 @@ module Wright
           stdout, _, status = Open3.capture3(env, 'rpm', *rpm_args)
           status.success? ? [stdout] : []
         end
+
+        private
+
+        def install_package
+          package = @resource.name
+          version = @resource.version
+          yum(:install, ['-y'], package, version)
+        end
+
+        def yum(action, options, package, version)
+          cmd = 'yum'
+          package_version = version.nil? ? '' : "-#{version}"
+          args = [action.to_s, *options, package + package_version]
+          exec_or_fail(cmd, args, "cannot #{action} package '#{package}'")
+        end
       end
     end
   end
